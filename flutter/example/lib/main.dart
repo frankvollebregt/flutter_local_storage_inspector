@@ -11,43 +11,10 @@ import 'package:storage_inspector/storage_inspector.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ignore: avoid_print
-  storageInspectorLogger = (e) => print(e);
-
-  final preferences = await SharedPreferences.getInstance();
-
-  final driver = StorageServerDriver(
-    bundleId: 'com.example.test',
-    icon: '<some icon>',
-  );
-  final keyValueServer =
-      PreferencesKeyValueServer(preferences, 'Preferences', keySuggestions: {
-    const ValueWithType(StorageType.string, 'testBool'),
-    const ValueWithType(StorageType.string, 'testInt'),
-    const ValueWithType(StorageType.string, 'testFloat'),
-  });
-  driver.addKeyValueServer(keyValueServer);
-
-  final secureKeyValueServer = SecureStorageKeyValueServer(
-      const FlutterSecureStorage(), 'Preferences',
-      keySuggestions: {
-        'testBool',
-        'testInt',
-        'testFloat',
-      });
-  driver.addKeyValueServer(secureKeyValueServer);
-
-  final fileServer =
-      DefaultFileServer(await _documentsDirectory(), 'App Documents');
-  driver.addFileServer(fileServer);
-
-  // Don't wait for a connection from the instrumentation driver
-  await driver.start(paused: false);
-
   // run app
   runApp(const MyApp());
 
-  await driver.stop(); //Optional when main ends
+  // await driver.stop(); //Optional when main ends
 }
 
 Future<String> _documentsDirectory() async {
@@ -56,7 +23,7 @@ Future<String> _documentsDirectory() async {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +38,7 @@ class MyApp extends StatelessWidget {
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
+  const MyHomePage({super.key, required this.title});
 
   final String title;
 
@@ -86,6 +53,45 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       _counter++;
     });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    initInspector();
+  }
+
+  Future<void> initInspector() async {
+    // ignore: avoid_print
+    storageInspectorLogger = (e) => print(e);
+
+    final preferences = await SharedPreferences.getInstance();
+
+    final driver =
+        StorageServerDriver(bundleId: 'com.example.example', icon: 'flutter');
+    final keyValueServer =
+        PreferencesKeyValueServer(preferences, 'Preferences', keySuggestions: {
+      const ValueWithType(StorageType.string, 'testBool'),
+      const ValueWithType(StorageType.string, 'testInt'),
+      const ValueWithType(StorageType.string, 'testFloat'),
+    });
+    driver.addKeyValueServer(keyValueServer);
+
+    final sec = const FlutterSecureStorage();
+    final secureKeyValueServer =
+        SecureStorageKeyValueServer(sec, 'Secure Storage', keySuggestions: {
+      'testBool',
+      'testInt',
+      'testFloat',
+    });
+    driver.addKeyValueServer(secureKeyValueServer);
+
+    final fileServer =
+        DefaultFileServer(await _documentsDirectory(), 'App Documents');
+    driver.addFileServer(fileServer);
+
+    // Don't wait for a connection from the instrumentation driver
+    await driver.start();
   }
 
   @override
